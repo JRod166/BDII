@@ -9,9 +9,9 @@ using namespace std;
 regex create("create table ([a-zA-Z]|\\d)+ \\( (([a-zA-Z]|\\d)+ (int|char|date) \\d+, )*([a-zA-Z]|\\d)+ (int|char|date) \\d+ \\)");
 regex select("select \\* from ([a-zA-Z]|\\d)+ where ([a-zA-Z]|\\d)+ (\\=|\\>|\\<) ([a-zA-Z]|\\d|\\-)+");
 //regex select("select ((\\*)|([a-zA-Z]|\\d)+) from ([a-zA-Z]|\\d)+ where ([a-zA-Z]|\\d)+ (\\=|\\>|\\<) \\d+");
-regex inserta("insert into ([a-zA-Z]|\\d)+ \\( (([a-zA-Z]|\\d)+, )*([a-zA-Z]|\\d)+ \\) values \\( (([a-zA-Z]|\\d)+, )*([a-zA-Z]|\\d)+ \\)");
+regex inserta("insert into ([a-zA-Z]|\\d)+ \\( (([a-zA-Z]|\\d)+, )*([a-zA-Z]|\\d)+ \\) values \\( (([a-zA-Z]|\\d|\\-)+, )*([a-zA-Z]|\\d|\\-)+ \\)");
 regex deletea("delete from ([a-zA-Z]|\\d)+ where ([a-zA-Z]|\\d)+ (\\=|\\>|\\<) ([a-zA-Z]|\\d|\\-)+");
-regex update("update ([a-zA-Z]|\\d)+ set (([a-zA-Z]|\\d)+ \\= ([a-zA-Z]|\\d)+, )*([a-zA-Z]|\\d)+ \\= ([a-zA-Z]|\\d)+ where ([a-zA-Z]|\\d)+ (\\=|\\>|\\<) \\d+");
+regex update("update from ([a-zA-Z]|\\d)+ set (([a-zA-Z]|\\d)+ \\= ([a-zA-Z]|\\d)+, )*([a-zA-Z]|\\d)+ \\= ([a-zA-Z]|\\d)+ where ([a-zA-Z]|\\d)+ (\\=|\\>|\\<) ([a-zA-Z]|\\d|\\-)+");
 regex cant("\\( ([a-zA-Z]|\\d)+ \\d+ \\)");
 regex help("(help|h)");
 
@@ -176,8 +176,6 @@ bool insert_into(string a)
         for(int q=0;q<temp;q++)
         {
             resultados[p]=' '+resultados[p];
-            cout<<'|'<<resultados[p]<<'|'<<endl;
-
         }
     }
     aux3.clear();
@@ -328,7 +326,11 @@ vector <string> selectiona(string a)
     do
     {
         archivo.read(buffer,tam_reg-1);
-        aux2=buffer;
+        aux2.clear();
+        for(int i=0;i<tam_reg;i++)
+        {
+            aux2+=buffer[i];
+        }
         aux3=aux2.substr(aux_tam,tam[index_cond]);
         temp=tam[j]-condicionada.size();
         for(int q=0;q<temp;q++)
@@ -614,6 +616,297 @@ void deletear(string a)
     return ;
 }
 
+int updatea(string a)
+{
+    vector<int> tam,tam_agregar;
+    vector<string> columnas_tabla, tipos,respuesta,columnas,resultados;
+    fstream archivo;
+    int string_sz=a.size(),contador=0;
+    string aux,aux2,aux3,aux4,table_name,columna_cond,cond,condicionada;
+    int i=0,tam_reg,aux_tam,index_cond,auxiliar,auxiliar2;
+
+    aux=a.substr(12,string_sz);
+    while(aux[i]!=' ')
+    {
+        table_name+=aux[i];
+        i++;
+    }
+    i+=5;
+    aux.clear();
+    vector<string> temporal;
+    while (i < string_sz-12)
+    {
+        while(aux[i]!=',' and aux[i]!=' ' and i<string_sz-12)
+        {
+            aux2+=aux[i];
+            i++;
+        }
+        if (aux2!="")
+        {
+            temporal.push_back(aux2);
+        }
+        aux2.clear();
+        i++;
+    }i=0;
+    while(temporal[i]!="where")
+    {
+        if(i%3==0)
+        {
+            columnas.push_back(temporal[i]);
+        }
+        if(i%3==2)
+        {
+            resultados.push_back(temporal[i]);
+        }
+        i++;
+    }
+    vector <int> tam_mod;
+    columna_cond=temporal[temporal.size()-3];
+    cond=temporal[temporal.size()-2];
+    condicionada=temporal[temporal.size()-1];
+    aux="./metadata/"+table_name+".meta";
+    archivo.open(aux,std::fstream::in | std::fstream::out);
+    get_meta(&tam,&columnas_tabla,&tipos,&archivo);
+    archivo.close();
+    tam_reg=0,aux_tam=0;
+    for (int j=0;j<tam.size();j++)
+    {
+        if(columnas_tabla[j]==columna_cond)
+        {
+            index_cond=j;
+        }
+        tam_reg+=tam[j];
+        tam_reg++;
+    }
+    int apoyo=0;
+    for(int j=0;j<columnas.size();j++)
+    {
+        tam_mod.push_back(0);
+        apoyo=0;
+        for(int k=0;k<columnas_tabla.size();k++)
+        {
+            if(columnas_tabla[k]==columnas[j])
+            {
+                tam_mod[j]=apoyo;
+                tam_agregar.push_back(tam[k]);
+            }
+            apoyo+=tam[k];
+            apoyo++;
+        }
+    }
+    int temp;
+    for (int p=0;p<resultados.size();p++)
+    {
+        temp=tam_agregar[p]-resultados[p].size();
+        for(int q=0;q<temp;q++)
+        {
+            resultados[p]=' '+resultados[p];
+        }
+    }
+///update from 10mil set nombre = pancho, apellido = ricachon where id = 58
+    int j=0;
+    while (columnas_tabla[j]!=columna_cond)
+    {
+        aux_tam+=tam[j];
+        aux_tam++;
+        j++;
+    }
+    aux2.clear();
+    aux="./tablas/"+table_name+".tab";
+    archivo.open(aux,std::fstream::in | std::fstream::out);
+    archivo.seekg(0,archivo.end);
+    int length=archivo.tellg();
+    archivo.seekg(0,archivo.beg);
+    char buffer[tam_reg-1];
+    auxiliar=0;
+    do
+    {
+        archivo.read(buffer,tam_reg-1);
+        aux2=buffer;
+        aux3=aux2.substr(aux_tam,tam[index_cond]);
+        temp=tam[j]-condicionada.size();
+        for(int q=0;q<temp;q++)
+        {
+            condicionada=' '+condicionada;
+        }
+        if (cond=="=")
+        {
+            if(condicionada==aux3)
+            {
+                for (int r=0;r<resultados.size();r++)
+                {
+                    archivo.seekg(auxiliar+tam_mod[r]);
+                    char buffertemp[tam_agregar[r]];
+
+                    for(int sd=0;sd<resultados[r].size();sd++)
+                    {
+                        buffertemp[sd]=resultados[r][sd];
+                    }
+                    archivo.write(buffertemp,resultados[r].size());
+                    archivo.flush();
+                }
+                contador++;
+            }
+        }
+        else
+        {
+            char buffer_vacio[aux3.size()];
+            for (int alpaca=0;alpaca<aux3.size();alpaca++)
+            {
+                buffer_vacio[alpaca]=' ';
+            }
+            if (aux3==buffer_vacio)
+            {
+
+            }
+            else if (tipos[index_cond]=="date")
+            {
+                int i=0;
+                while(aux3[i]!='-')
+                {
+                    aux4+=aux3[i];
+                    i++;
+                }
+                i++;
+                auxiliar2=stoi(aux4);
+                aux4.clear();
+                while(aux3[i]!='-')
+                {
+                    aux4+=aux3[i];
+                    i++;
+                }
+                auxiliar2+=(stoi(aux4)*30);
+                if(cond=="<")
+                {
+                    if (stoi(condicionada.substr(tam[index_cond]-3,tam[index_cond]))>=stoi(aux3.substr(tam[index_cond]-4,tam[index_cond])))
+                    {
+                        for (int r=0;r<resultados.size();r++)
+                        {
+                            archivo.seekg(auxiliar+tam_mod[r]);
+                            char buffertemp[tam_agregar[r]];
+
+                            for(int sd=0;sd<resultados[r].size();sd++)
+                            {
+                                buffertemp[sd]=resultados[r][sd];
+                            }
+                            archivo.write(buffertemp,resultados[r].size());
+                            archivo.flush();
+                        }
+                        contador++;
+                    }
+                    else
+                    {
+                        if(auxiliar2<stoi(condicionada.substr(0,2))+(stoi(condicionada.substr(3,5))*30))
+                        {
+                            for (int r=0;r<resultados.size();r++)
+                            {
+                                archivo.seekg(auxiliar+tam_mod[r]);
+                                char buffertemp[tam_agregar[r]];
+
+                                for(int sd=0;sd<resultados[r].size();sd++)
+                                {
+                                    buffertemp[sd]=resultados[r][sd];
+                                }
+                                archivo.write(buffertemp,resultados[r].size());
+                                archivo.flush();
+                            }
+                            contador++;
+                        }
+                    }
+                }
+                if ( cond ==">")
+                {
+                    if (stoi(condicionada.substr(tam[index_cond]-3,tam[index_cond]))<=stoi(aux3.substr(tam[index_cond]-4,tam[index_cond])))
+                    {
+                        for (int r=0;r<resultados.size();r++)
+                        {
+                            archivo.seekg(auxiliar+tam_mod[r]);
+                            char buffertemp[tam_agregar[r]];
+
+                            for(int sd=0;sd<resultados[r].size();sd++)
+                            {
+                                buffertemp[sd]=resultados[r][sd];
+                            }
+                            archivo.write(buffertemp,resultados[r].size());
+                            archivo.flush();
+                        }
+                        contador++;
+                    }
+                    else
+                    {
+                        if(auxiliar2>stoi(condicionada.substr(0,2))+(stoi(condicionada.substr(3,5))*30))
+                        {
+                            for (int r=0;r<resultados.size();r++)
+                            {
+                                archivo.seekg(auxiliar+tam_mod[r]);
+                                char buffertemp[tam_agregar[r]];
+
+                                for(int sd=0;sd<resultados[r].size();sd++)
+                                {
+                                    buffertemp[sd]=resultados[r][sd];
+                                }
+                                archivo.write(buffertemp,resultados[r].size());
+                                archivo.flush();
+                            }
+                            contador++;
+                        }
+                    }
+                }
+            }
+            else if(tipos[index_cond]=="int")
+            {
+                if(cond=="<")
+                {
+                    if(stoi(aux3)<stoi(condicionada))
+                    {
+                        for (int r=0;r<resultados.size();r++)
+                        {
+                            archivo.seekg(auxiliar+tam_mod[r]);
+                            char buffertemp[tam_agregar[r]];
+
+                            for(int sd=0;sd<resultados[r].size();sd++)
+                            {
+                                buffertemp[sd]=resultados[r][sd];
+                            }
+                            archivo.write(buffertemp,resultados[r].size());
+                            archivo.flush();
+                        }
+                        contador++;
+                    }
+                }
+                if(cond==">")
+                {
+                    if(stoi(aux3)>stoi(condicionada))
+                    {
+                        for (int r=0;r<resultados.size();r++)
+                        {
+                            archivo.seekg(auxiliar+tam_mod[r]);
+                            char buffertemp[tam_agregar[r]];
+
+                            for(int sd=0;sd<resultados[r].size();sd++)
+                            {
+                                buffertemp[sd]=resultados[r][sd];
+                            }
+                            archivo.write(buffertemp,resultados[r].size());
+                            archivo.flush();
+                        }
+                        contador++;
+                    }
+                }
+            }
+            else{
+                cout<<"No es posible aplicar el operador logico "<<cond<<" en este tipo de dato"<<endl;
+                return 0;
+            }
+        }
+        auxiliar+=tam_reg;
+        archivo.seekg(auxiliar);
+    } while (auxiliar<length);
+
+    ///UPDATE FROM table_name SET atributo=valor....
+    return contador;
+}
+
 int main()
 {
     while (true)
@@ -648,14 +941,17 @@ int main()
         else if (regex_match(a,deletea))
         {
             deletear(a);
+            cout<<"Borrado terminado"<<endl;
         }
         else if (regex_match(a,update))
         {
+            int cantidad;
             cout<<"update"<<endl;
+            cantidad=updatea(a);
+            cout<<cantidad<<" filas modificadas"<<endl;
         }
         else if (regex_match(a,cant))
         {
-            cout<<"Insercion en bloque"<<endl;
             bloque(a);
         }
         else if (regex_match(a,help))
