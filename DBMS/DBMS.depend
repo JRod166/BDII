@@ -1,0 +1,9 @@
+# depslib dependency file v1.0
+1525512105 source:c:\users\rodrigo\documents\github\bdii\dbms\main.cpp
+	<iostream>
+	<regex>
+	<string>
+	<conio.h>
+	<vector>
+	<fstream>
+

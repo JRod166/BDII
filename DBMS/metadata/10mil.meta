@@ -1,0 +1,5 @@
+id int 6
+nombre char 15
+apellido char 15
+edad int 3
+fecha date 10
