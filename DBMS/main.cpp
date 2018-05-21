@@ -14,6 +14,7 @@ regex deletea("delete from ([a-zA-Z]|\\d)+ where ([a-zA-Z]|\\d)+ (\\=|\\>|\\<) (
 regex update("update from ([a-zA-Z]|\\d)+ set (([a-zA-Z]|\\d)+ \\= ([a-zA-Z]|\\d)+, )*([a-zA-Z]|\\d)+ \\= ([a-zA-Z]|\\d)+ where ([a-zA-Z]|\\d)+ (\\=|\\>|\\<) ([a-zA-Z]|\\d|\\-)+");
 regex cant("\\( ([a-zA-Z]|\\d)+ \\d+ \\)");
 regex help("(help|h)");
+regex salir("exit");
 
 bool get_meta(vector<int> *tam,vector<string> *columnas_tabla,vector<string> *tipos,fstream *metadata)
 {
@@ -961,7 +962,11 @@ int main()
             cout<<"insert into table_name (col_name, col_name, ... ) values ( value, value, ... )"<<endl;
             cout<<"delete from table_name where col_name =/</> value"<<endl;
             cout<<"update from table_name set col_name = value, col_name = value, ... where col_name =/</> value"<<endl;
-            cout<<"date format: DD/MM/YYYY"<<endl;
+            cout<<"date format: DD-MM-YYYY"<<endl;
+        }
+        else if(regex_match(a,salir))
+        {
+            return 0;
         }
         else
         {
